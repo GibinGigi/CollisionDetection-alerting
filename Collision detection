@@ -1,0 +1,250 @@
+#include <TinyGPS++.h>  //GPS Library
+#include <SoftwareSerial.h>  //Software Serial UART Library
+#include <LiquidCrystal.h>  // LCD Library
+
+#define Button 10
+#define Button2 11
+#define Buzzer 13  //Buzzer and LED
+#define ForceSens A0
+
+int Sens_in;
+
+TinyGPSPlus gps;
+SoftwareSerial mySerial(2, 3); // RX, TX  -  2-GPS_Tx, 3-GSM_Rx
+LiquidCrystal lcd(4, 5, 6, 7, 8, 9); //Rs,En,D4,D5,D6,D7 --RW-GND
+
+void setup()
+{
+  Serial.begin(9600);  //baud rate
+  mySerial.begin(9600);  //baud rate
+  lcd.begin(16, 2);  //lcd row column
+  pinMode(Button,INPUT_PULLUP);
+  pinMode(Button2,INPUT_PULLUP);
+  pinMode(Buzzer,OUTPUT);
+  mySerial.println("AT"); // set SMS mode to text
+  delay(200);
+  lcd.print(" Accident Alert ");
+  lcd.setCursor(0, 1);
+  lcd.print("     System     ");
+  delay(3000);
+}
+
+void loop()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("System Ready... ");
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
+  
+ Sens_in=analogRead(ForceSens);
+ Serial.println(Sens_in);
+ 
+ if((digitalRead(Button)==0) || (digitalRead(Button2)==0))
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Accident Occured");
+  updateSerial1();
+  Serial.println("button pressed");
+  digitalWrite(Buzzer,HIGH);
+  delay(100);
+  digitalWrite(Buzzer,LOW);
+  delay(100);
+  digitalWrite(Buzzer,HIGH);
+  delay(100);
+  digitalWrite(Buzzer,LOW);
+  delay(100);
+  digitalWrite(Buzzer,HIGH);
+  delay(100);
+  digitalWrite(Buzzer,LOW);
+  delay(100);
+  digitalWrite(Buzzer,HIGH);
+  delay(100);
+  digitalWrite(Buzzer,LOW);
+  delay(100);
+  digitalWrite(Buzzer,HIGH);
+  delay(100);
+  digitalWrite(Buzzer,LOW);
+  delay(9000);
+}
+
+if(Sens_in<=100 && Sens_in>50)
+
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Accident Occured");
+  lcd.setCursor(0, 1);
+  lcd.print("Severity: Mild  ");
+  updateSerial2();
+  Serial.println("mild");
+  digitalWrite(Buzzer,HIGH);
+  delay(300);
+  digitalWrite(Buzzer,LOW);
+  delay(300);
+  digitalWrite(Buzzer,HIGH);
+  delay(300);
+  digitalWrite(Buzzer,LOW);
+  delay(300);
+  digitalWrite(Buzzer,HIGH);
+  delay(300);
+  digitalWrite(Buzzer,LOW);
+  delay(300);
+  digitalWrite(Buzzer,HIGH);
+  delay(300);
+  digitalWrite(Buzzer,LOW);
+  delay(300);
+  digitalWrite(Buzzer,HIGH);
+  delay(300);
+  digitalWrite(Buzzer,LOW);
+  delay(7000);
+}
+
+
+else if(Sens_in<=50)
+
+{
+  digitalWrite(Buzzer,HIGH);
+  lcd.setCursor(0, 0);
+  lcd.print("Accident Occured");
+  lcd.setCursor(0, 1);
+  lcd.print("Severity: High  ");
+  updateSerial3();
+  Serial.println("high");
+  delay(10000);
+  digitalWrite(Buzzer,LOW);
+}
+
+ while (mySerial.available() > 0)
+    if (gps.encode(mySerial.read()))
+      displayInfo();
+
+ if (millis() > 5000 && gps.charsProcessed() < 10)
+  {
+    Serial.println("No GPS detected");
+    while(true);
+  }
+}
+
+void displayInfo()  ////////////////////////////  GPS Time Display
+{
+  if (gps.location.isValid())
+  {
+    Serial.print("Latitude: ");
+    Serial.println(gps.location.lat(), 6);
+    Serial.print("Longitude: ");
+    Serial.println(gps.location.lng(), 6);
+  }
+  
+else
+  {
+    Serial.println("Location: Not Available");
+  }
+    Serial.print("Time: ");
+  if (gps.time.isValid())
+  {
+    if (gps.time.hour() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.hour());
+    Serial.print(":");
+    if (gps.time.minute() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.minute());
+    Serial.print(":");
+    if (gps.time.second() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.second());
+  }
+  else
+  {
+    Serial.println("Not Available");
+  }
+  Serial.println();
+  Serial.println();
+  delay(1000);
+}
+
+void updateSerial1()  /////////////  Accident Alert using Button
+{ 
+  mySerial.println("AT");
+  delay(500);
+  mySerial.println("AT+CMGF=1"); //Sets GSM Mod. in Text Mode
+  delay(500);  // Delay of 1000 milliseconds or 1 second
+  mySerial.println("AT+CMGS=\"+919497899343\"\r"); //GibinNo.
+  delay(500);
+  mySerial.println("Accident Occured..!! ");
+  mySerial.println("My Current location is: ");
+  mySerial.println("                           ");
+  mySerial.print("http://maps.google.com/?q=");
+  mySerial.print(gps.location.lat(), 6);
+  mySerial.print(",");
+  mySerial.print(gps.location.lng(), 6);
+  mySerial.println("              ");
+  mySerial.print("Time:");
+  mySerial.print(gps.time.hour());
+  mySerial.print(":");
+  if (gps.time.minute() < 10) mySerial.print(F("0"));
+  mySerial.print(gps.time.minute());
+  mySerial.print(":");
+  if (gps.time.second() < 10) mySerial.print(F("0"));
+  mySerial.print(gps.time.second());
+  mySerial.print("UTC");
+  delay(100);
+  mySerial.write(26);// ASCII code of CTRL+Z
+  Serial.println("button_msg");
+}
+  
+void updateSerial2()  /////////////////////// Accident Alert mild
+{ 
+  mySerial.println("AT");
+  delay(500);
+  mySerial.println("AT+CMGF=1");  //Sets GSM Mod. in Text Mode
+  delay(500);  
+  mySerial.println("AT+CMGS=\"+919497899343\"\r"); //GibinNo.
+  delay(500);
+  mySerial.println("Mild Accident Occured..!! ");
+  mySerial.println("My Current location is: ");
+  mySerial.println("                           ");
+  mySerial.print("http://maps.google.com/?q=");
+  mySerial.print(gps.location.lat(), 6);
+  mySerial.print(",");
+  mySerial.print(gps.location.lng(), 6);
+  mySerial.println("              ");
+  mySerial.print("Time:");
+  mySerial.print(gps.time.hour());
+  mySerial.print(":");
+  if (gps.time.minute() < 10) mySerial.print(F("0"));
+  mySerial.print(gps.time.minute());
+  mySerial.print(":");
+  if (gps.time.second() < 10) mySerial.print(F("0"));
+  mySerial.print(gps.time.second());
+  mySerial.print("UTC");
+  delay(100);
+  mySerial.write(26);// ASCII code of CTRL+Z
+  Serial.println("mild_msg");
+}
+
+void updateSerial3()  //////////////////////  Accident Alert Severe
+{ 
+  mySerial.println("AT");
+  delay(500);
+  mySerial.println("AT+CMGF=1");  //Sets GSM Mod. in Text Mode
+  delay(500); 
+  mySerial.println("AT+CMGS=\"+919497899343\"\r"); //GibinNo.
+  delay(500);
+  mySerial.println("Severe Accident Occured..!! ");
+  mySerial.println("My Current location is: ");
+  mySerial.println("                           ");
+  mySerial.print("http://maps.google.com/?q=");
+  mySerial.print(gps.location.lat(), 6);
+  mySerial.print(",");
+  mySerial.print(gps.location.lng(), 6);
+  mySerial.println("              ");
+  mySerial.print("Time:");
+  mySerial.print(gps.time.hour());
+  mySerial.print(":");
+  if (gps.time.minute() < 10) mySerial.print(F("0"));
+  mySerial.print(gps.time.minute());
+  mySerial.print(":");
+  if (gps.time.second() < 10) mySerial.print(F("0"));
+  mySerial.print(gps.time.second());
+  mySerial.print("UTC");
+  delay(100);
+  mySerial.write(26);// ASCII code of CTRL+Z
+  Serial.println("high_msg");
+}          
